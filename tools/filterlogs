@@ -6,23 +6,59 @@ from collections import namedtuple
 import csv
 import fileinput
 import hashlib
+import os
 import re
 import socket
 import struct
 import sys
 
+HERE = os.path.dirname(__file__)
+
 BOTS_RE = re.compile(r'YandexBot|Pingdom.com_bot|MoodleBot|PaperLiBot|AdsBot-Google|FriendFeedBot|AhrefsBot|Magus Bot|TweetedTimes Bot|SkimBot|KomodiaBot|LinkedInBot|CareerBot|ShowyouBot|RSSIncludeBot|FeedlyBot|YoudaoBot|WASALive-Bot|r2iBot|HonBot|SurveyBot|FeedBot|aiHitBot|Sitekit.net Linkchecker Bot|yolinkBot|WikioBot|YodaoBot|TweetmemeBot|CukBot|PreviewBot|oBot')
+
+GEOIP_BLOCKS    = open(os.path.join(HERE, 'data', 'GeoLiteCity-Blocks.csv'))
+GEOIP_LOCATIONS = open(os.path.join(HERE, 'data', 'GeoLiteCity-Location.csv'))
+
+GeoIpBlock = namedtuple('GeoIpBlock', 'start_ip end_ip loc_id')
+GeoIpLocation = namedtuple('GeoIpLocation', 'id country region city postal_code latitude longitude metro_code area_code')
 
 LineIn = namedtuple('LineIn', 'date time ip method uri status bytes time_taken referer user_agent cookie wafinfo')
 LineOut = namedtuple('LineOut', 'time method uri status bytes time_taken referer uid location lat lon')
 Location = namedtuple('Location', 'name lat lon')
 
-# class GeoIp(object):
 
-#     def __init__(self, blocks_file, locations_file):
-#         with open(blocks_file) as fp:
-#             fp
+class GeoIp(object):
 
+    def __init__(self, blocks_fp, locations_fp):
+        self._load_blocks_file(blocks_fp)
+        self._load_locations_file(locations_fp)
+
+    def ip_lookup(self, ip):
+        ip_as_int = ip_to_int(ip)
+        for b in self.blocks:
+            if b.start_ip <= ip_as_int <= b.end_ip:
+                return self.get_location(b.loc_id)
+        return None
+
+    def get_location(self, loc_id):
+        return self.locations.get(loc_id)
+
+    def _load_blocks_file(self, fp):
+        self.blocks = []
+        for line in csv.reader(fp):
+            if len(line) == 3 and line[0] != 'startIpNum':
+                start_ip, end_ip, loc_id = line
+                block = GeoIpBlock(int(start_ip), int(end_ip), loc_id)
+                self.blocks.append(block)
+
+    def _load_locations_file(self, fp):
+        self.locations = {}
+        for line in csv.reader(fp):
+            if len(line) == 9 and line[0] != 'locId':
+                location = GeoIpLocation(*line)
+                self.locations[location.id] = location
+
+geoip = GeoIp(GEOIP_BLOCKS, GEOIP_LOCATIONS)
 
 def ip_to_int(val):
     try:
@@ -35,9 +71,7 @@ def make_uid(*args):
     return hashlib.sha1('::'.join(args)).hexdigest()
 
 def find_location(ip):
-    key = ip_to_int(ip)
-    return Location("Preston", '53.749', '-2.702')
-
+    return geoip.ip_lookup(ip)
 
 def process(line):
     i = LineIn(*line)
@@ -58,9 +92,9 @@ def process(line):
         i.time_taken,
         i.referer,
         uid,
-        loc.name,
-        loc.lat,
-        loc.lon
+        loc.city,
+        loc.latitude,
+        loc.longitude
     )
 
     return o
