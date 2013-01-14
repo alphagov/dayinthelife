@@ -5,6 +5,7 @@ from __future__ import print_function
 from collections import namedtuple
 import csv
 import fileinput
+import functools
 import hashlib
 import logging
 import os
@@ -33,6 +34,15 @@ LineIn = namedtuple('LineIn', 'date time ip method uri status bytes time_taken r
 LineOut = namedtuple('LineOut', 'time method uri status bytes time_taken referer uid location lat lon')
 Location = namedtuple('Location', 'name latitude longitude')
 
+def lru_cache(*args, **kwargs):
+    '''
+    Return a cache decorator if available (Python 3.2), and the identity
+    function otherwise.
+    '''
+    try:
+        return functools.lru_cache(*args, **kwargs)
+    except AttributeError:
+        return lambda x: x
 
 class GeoIp(object):
 
@@ -43,6 +53,7 @@ class GeoIp(object):
             self._load_locations(locations_fp)
             self._load_blocks(blocks_fp)
 
+    @lru_cache(maxsize=128)
     def ip_lookup(self, ip):
         ip_as_int = ip_to_int(ip)
         c = self.db.cursor()
