@@ -141,7 +141,7 @@ def ip_to_int(val):
     return struct.unpack('!I', _str)[0]
 
 def make_uid(*args):
-    return hashlib.sha1('::'.join(args)).hexdigest()
+    return hashlib.sha1('::'.join(args).encode('utf8')).hexdigest()
 
 def find_location(ip):
     return geoip.ip_lookup(ip)
