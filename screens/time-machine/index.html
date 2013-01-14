@@ -1,0 +1,112 @@
+<!doctype html>
+
+<title>Time Machine</title>
+<style>
+  body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+  #time-machine {
+    position: relative;
+    background: #000 url(stars.jpg) repeat 0 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+  }
+  span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-animation: pushDown 3s linear;
+    line-height:0;
+  }
+  img {
+    opacity: 0;
+    -webkit-animation: fadeOut 3s ease, shrink 3s linear;
+  }
+  @-webkit-keyframes fadeOut {
+    from { opacity: 0; }
+    25% { opacity: 1; }
+    85%  { opacity: 1; }
+    100%   { opacity: 0; }
+  }
+  @-webkit-keyframes shrink {
+    from { width: 100px; }
+    100% { width: 900px; }
+  }
+  @-webkit-keyframes pushDown {
+    from { top: 0px; }
+    100% { top: 50px; }
+  }
+
+</style>
+
+
+
+<div id="time-machine"></div>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script>
+
+  $(function(){
+    var images = [
+      '00a8d61e4d172b9e8137f1395bcd6de1.png',
+      '0aea4de76d6bdffb8a9d32e36309b3bf.png',
+      '0b2f23273e2fc1c506af5b53dd0f5316.png',
+      '0bf0882a86226cfa968d774c4533dcc2.png',
+      '0db57a808a520f33299391e323821a42.png',
+      '0a07fae503c6e3ed831af194a237a6fa.png',
+      '0afbac6a926900eff0bb453426583643.png',
+      '0b3749f60e3181d69c2f0d2c2b5d20c6.png',
+      '0d564ae99c5107364cdd15094ba6180c.png',
+      '0e3cce255aa3097d3fdba6f0e7680981.png',
+      '0a4794169ddecc0666cf8149f6830522.png',
+      '0b1499d296e6148f43432094f3dd803e.png',
+      '0b9cbe137980a41130ee629f05d6d384.png',
+      '0d58f6c62be751a740af06333d4048ca.png',
+      '0e56db000bff68420a4f3f7fc8789a57.png',
+    ];
+
+    var machine = {
+      index: 0,
+      init: function(){
+        machine.$machine = $('#time-machine');
+      },
+      addImage: function(){
+        machine.index = machine.index + 1;
+        if(typeof images[machine.index] === 'undefined') {
+          machine.index = 0;
+        }
+
+        var $image = $('<span><img width="500" src="images/'+ images[machine.index] + '"></span>');
+
+        machine.$machine.prepend($image);
+      },
+      clearImages: function(){
+        machine.$machine.find('span:gt(4)').remove();
+      },
+      start: function(){
+        machine.addImage();
+        machine.interval = window.setInterval(function(){
+          machine.addImage();
+          machine.clearImages();
+        }, .75e3);
+      },
+      stop: function(){
+        window.clearInterval(machine.interval);
+      }
+    
+    };
+
+
+    machine.init();
+    machine.start();
+
+    window.machine = machine;
+
+  });
+</script>
+
