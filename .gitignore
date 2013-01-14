@@ -1,2 +1,3 @@
 gdslog_*
 *.log
+stories/data/*.json
