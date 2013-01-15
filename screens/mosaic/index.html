@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+<style>
+/* CSS3 masonry transitions */
+.masonry,
+.masonry .masonry-brick {
+        -webkit-transition-duration: 0.7s;
+        -moz-transition-duration: 0.7s;
+        -o-transition-duration: 0.7s;
+        transition-duration: 0.7s;
+}
+
+.masonry {
+        -webkit-transition-property: height, width;
+        -moz-transition-property: height, width;
+        -o-transition-property: height, width;
+        transition-property: height, width;
+}
+
+.masonry .masonry-brick {
+        -webkit-transition-property: left, right, top;
+        -moz-transition-property: left, right, top;
+        -o-transition-property: left, right, top;
+        transition-property: left, right, top;
+}
+</style>
+</head>
+<body>
+<div id="gallery"></div>
+
+<!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery.masonry.min.js"></script>
+<script>
+(function ($) {
+    var $gallery = $('#gallery');
+
+    function tile() {
+        $gallery.imagesLoaded( function(){
+            //$gallery.masonary('reload');
+
+            $gallery.masonry({
+                itemSelector : 'img',
+                isFitWidth: true
+            });
+        });
+    }
+
+    function shuffle(o) {
+        for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+            return o;
+    }
+
+    function load(data) {
+        var imgs = {};
+        var max = 0;
+
+        $.each(data.slots, function (n, slot) {
+            $.each(slot.hits, function (id, count) {
+                if (!imgs[id]) {
+                    imgs[id] = count;
+                    if (count > max) {
+                        max = count;
+                    }
+                }
+            });
+        });
+
+        var lines = [];
+        var width, size;
+        $.each(imgs, function (id) {
+             width = imgs[id] * 800 / max;
+             size = "small";
+             if (width > 400) {
+                size = "wide";
+             } else if (width > 50) {
+                size = "thumb";
+             }
+             lines.push('<img id="' + id + '" src="img/' + size + '/' + id + '.png" width="' + width + '">');
+        });
+
+        lines = shuffle(lines);
+
+        $(lines.join('')).appendTo($gallery);
+    }
+
+    // load all images ..
+    $(function () {
+        $.getJSON('slots.json', {}, function (data, status) {
+            load(data);
+            tile();
+        });
+    });
+})(jQuery);
+</script>
+</body>
+</html>
