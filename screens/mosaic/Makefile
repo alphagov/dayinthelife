@@ -31,9 +31,13 @@ data/logs.txt:
 #  - check -nt
 #  - fix Web fonts
 #
+img/wide:
+	mkdir -p $@
+	cd img/full; for i in *png; do convert -define png:size=800x800 $$i -thumbnail 800x800^ -extent 800x800 ../wide/$$i; done
+
 img/thumb:
 	mkdir -p $@
-	cd img/full; for i in *png; do convert -define png:size=400x400 $$i -thumbnail 400x400^ -extent 400x400 ../thumbs/$$i; done
+	cd img/full; for i in *png; do convert -define png:size=400x400 $$i -thumbnail 400x400^ -extent 400x400 ../thumb/$$i; done
 
 img/small:
 	mkdir -p $@
