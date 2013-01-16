@@ -1,0 +1,85 @@
+<!doctype html>
+
+<title>uk map</title>
+<style>
+  path {
+    fill: #333;
+    stroke: #666;
+  }
+  body {
+    background: #333;
+  }
+</style>
+
+<svg id="map" width="600" height="500"></svg>
+
+<script src="./d3.v3.min.js"></script>
+<script>
+
+  var svg = d3.select('#map');
+
+  var map = svg.append("g").attr("class", "map");
+  var projection = d3.geo.albers();
+  projection.center([-2,54]);       // center long and lat of the world
+  projection.translate([300, 250]); // center pixel of the svg
+  projection.rotate([0,0]);         // rotation of the graph
+  projection.scale(2500);           // scale of the graph
+
+  var path = d3.geo.path().projection(projection);
+  d3.json('uk.json', function(json) {
+    map.selectAll('path')
+    .data(json.features)
+    .enter().append('path').attr('d', path);
+  });
+  d3.json('users.json', function(json) {
+    userMap.allUsers = json;
+    userMap.init();
+  });
+
+  var userMap = {
+    userCount: 0,
+    allUsers: [],
+    displayedUsers: [],
+
+
+    showNextUser: function(){
+      userMap.userCount = userMap.userCount + 1;
+      if(userMap.userCount > userMap.allUsers.length){ userMap.userCount = 0; }
+
+      userMap.displayedUsers.push(userMap.allUsers[userMap.userCount]);
+
+      if(userMap.displayedUsers.length > 40){
+        userMap.displayedUsers.shift();
+      }
+
+      var circle = svg.selectAll('circle').data(userMap.displayedUsers, function(d){ return ''+ d[0] + d[1]; });
+
+      circle.enter().insert('circle')
+          .attr('cx', function(d){ return projection([ d[1], d[0] ])[0] })
+          .attr('cy', function(d){ return projection([ d[1], d[0] ])[1] })
+          .attr("r", 5)
+          .attr('fill', '#fff');
+
+      circle.transition()
+          .duration(400)
+          .attr('fill', '#999')
+          .attr("r", 2);
+
+      circle.exit()
+        .transition()
+          .attr('fill', '#333')
+          .remove();
+    },
+
+    init: function(){
+      window.setInterval(userMap.showNextUser, 250);
+    }
+  };
+
+
+  svg.on("click", function() {
+    p = projection.invert(d3.mouse(this));
+    console.log(p);
+  });
+
+</script>
