@@ -133,6 +133,14 @@ class GeoIp(object):
 
 geoip = GeoIp(GEOIP_BLOCKS, GEOIP_LOCATIONS)
 
+def stripcomments(fp):
+    for line in fp:
+        if line.startswith('#'):
+            continue
+        if line.strip() == '':
+            continue
+        yield line
+
 def ip_to_int(val):
     try:
         _str = socket.inet_pton(socket.AF_INET, val)
@@ -175,7 +183,7 @@ def process(line):
 
 def main():
     writer = csv.writer(sys.stdout)
-    for line in csv.reader(fileinput.input(), delimiter='\t'):
+    for line in csv.reader(stripcomments(fileinput.input()), delimiter='\t'):
         res = process(line)
         if res is not None:
             writer.writerow(res)
