@@ -81,7 +81,8 @@ def process(line):
 
 def main():
     writer = csv.writer(sys.stdout)
-    for line in csv.reader(stripcomments(fileinput.input()), delimiter='\t'):
+    fp = stripcomments(fileinput.input())
+    for line in csv.reader(fp, delimiter='\t'):
         res = process(line)
         if res is not None:
             writer.writerow(res)
