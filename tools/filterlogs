@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 HERE = os.path.dirname(__file__)
 
-BOTS_RE = re.compile(r'YandexBot|Pingdom.com_bot|MoodleBot|PaperLiBot|AdsBot-Google|FriendFeedBot|AhrefsBot|Magus Bot|TweetedTimes Bot|SkimBot|KomodiaBot|LinkedInBot|CareerBot|ShowyouBot|RSSIncludeBot|FeedlyBot|YoudaoBot|WASALive-Bot|r2iBot|HonBot|SurveyBot|FeedBot|aiHitBot|Sitekit.net Linkchecker Bot|yolinkBot|WikioBot|YodaoBot|TweetmemeBot|CukBot|PreviewBot|oBot')
+BOTS_RE = re.compile(r'libwww|curl|spider\b|Bot\b|\bbot\b|Monitage')
 
 GEOIP_DAT = os.environ.get('GEOIP_DAT', os.path.join(HERE, 'data', 'GeoLiteCity.dat'))
 
@@ -55,7 +55,7 @@ def find_location(ip):
 def process(line):
     i = LineIn(*line)
 
-    if re.match(BOTS_RE, i.user_agent):
+    if re.search(BOTS_RE, i.user_agent):
         return
 
     time = i.date + 'T' + i.time
