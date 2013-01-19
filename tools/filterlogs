@@ -5,15 +5,15 @@ from __future__ import print_function
 from collections import namedtuple
 import csv
 import fileinput
-import functools
 import hashlib
 import logging
 import os
 import re
 import socket
-import sqlite3
 import struct
 import sys
+
+import pygeoip
 
 LOG_FORMAT = '%(asctime)-15s %(levelname)-6s %(message)s'
 logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
@@ -23,115 +23,13 @@ HERE = os.path.dirname(__file__)
 
 BOTS_RE = re.compile(r'YandexBot|Pingdom.com_bot|MoodleBot|PaperLiBot|AdsBot-Google|FriendFeedBot|AhrefsBot|Magus Bot|TweetedTimes Bot|SkimBot|KomodiaBot|LinkedInBot|CareerBot|ShowyouBot|RSSIncludeBot|FeedlyBot|YoudaoBot|WASALive-Bot|r2iBot|HonBot|SurveyBot|FeedBot|aiHitBot|Sitekit.net Linkchecker Bot|yolinkBot|WikioBot|YodaoBot|TweetmemeBot|CukBot|PreviewBot|oBot')
 
-GEOIP_BLOCKS    = open(os.path.join(HERE, 'data', 'GeoLiteCity-Blocks.csv'))
-GEOIP_LOCATIONS = open(os.path.join(HERE, 'data', 'GeoLiteCity-Location.csv'))
-GEOIP_DBPATH    = os.environ.get('GEOIP_DBPATH', os.path.join(HERE, 'data', 'geoip.sqlite3'))
-
-GeoIpBlock = namedtuple('GeoIpBlock', 'start_ip end_ip loc_id')
-GeoIpLocation = namedtuple('GeoIpLocation', 'id country region city postal_code latitude longitude metro_code area_code')
+GEOIP_DAT = os.environ.get('GEOIP_DAT', os.path.join(HERE, 'data', 'GeoLiteCity.dat'))
 
 LineIn = namedtuple('LineIn', 'date time ip method uri status bytes time_taken referer user_agent cookie wafinfo')
 LineOut = namedtuple('LineOut', 'time method uri status bytes time_taken referer uid location lat lon')
 Location = namedtuple('Location', 'name latitude longitude')
 
-def lru_cache(*args, **kwargs):
-    '''
-    Return a cache decorator if available (Python 3.2), and the identity
-    function otherwise.
-    '''
-    try:
-        return functools.lru_cache(*args, **kwargs)
-    except AttributeError:
-        return lambda x: x
-
-class GeoIp(object):
-
-    def __init__(self, blocks_fp, locations_fp):
-        self.db = sqlite3.connect(GEOIP_DBPATH)
-
-        if self._initialize_db():
-            self._load_locations(locations_fp)
-            self._load_blocks(blocks_fp)
-
-    @lru_cache(maxsize=128)
-    def ip_lookup(self, ip):
-        ip_as_int = ip_to_int(ip)
-        c = self.db.cursor()
-        c.execute('''
-            select city, latitude, longitude
-            from blocks as b join locations as l on b.loc_id = l.id
-            where b.start_ip <= ? and b.end_ip >= ?
-            limit 1
-        ''', (ip_as_int, ip_as_int))
-
-        res = c.fetchone()
-
-        if res is not None:
-            return Location(*res)
-        else:
-            return None
-
-    def _initialize_db(self):
-        c = self.db.cursor()
-
-        c.execute('select count() from sqlite_master where type="table" and name="locations"')
-        res = c.fetchone()
-
-        if res[0] == 1:
-            # The tables have already been populated
-            return False
-
-        log.debug('initializing database tables')
-
-        c.execute('''create table locations (
-            id integer primary key,
-            country text,
-            region text,
-            city text,
-            postal_code text,
-            latitude text,
-            longitude text,
-            metro_code text,
-            area_code text
-        );''')
-
-        c.execute('''create table blocks (
-            start_ip integer,
-            end_ip integer,
-            loc_id integer,
-            foreign key(loc_id) references locations(id)
-        )''')
-
-        c.execute('create index ip_idx on blocks (start_ip, end_ip)')
-
-        self.db.commit()
-
-        log.debug('done initializing database tables')
-
-        return True
-
-
-    def _load_blocks(self, fp):
-        log.debug('loading blocks data')
-        c = self.db.cursor()
-        for i, line in enumerate(csv.reader(fp)):
-            if len(line) == 3 and line[0] != 'startIpNum':
-                c.execute('insert into blocks values (?, ?, ?)', [s.decode('latin1') for s in line])
-            if i % 1000 == 0:
-                self.db.commit()
-        self.db.commit()
-
-    def _load_locations(self, fp):
-        log.debug('loading locations data')
-        c = self.db.cursor()
-        for i, line in enumerate(csv.reader(fp)):
-            if len(line) == 9 and line[0] != 'locId':
-                c.execute('insert into locations values (?, ?, ?, ?, ?, ?, ?, ?, ?)', [s.decode('latin1') for s in line])
-            if i % 1000 == 0:
-                self.db.commit()
-        self.db.commit()
-
-geoip = GeoIp(GEOIP_BLOCKS, GEOIP_LOCATIONS)
+geoip = pygeoip.GeoIP(GEOIP_DAT, pygeoip.MEMORY_CACHE)
 
 def stripcomments(fp):
     for line in fp:
@@ -152,7 +50,7 @@ def make_uid(*args):
     return hashlib.sha1('::'.join(args).encode('utf8')).hexdigest()
 
 def find_location(ip):
-    return geoip.ip_lookup(ip)
+    return geoip.record_by_addr(ip)
 
 def process(line):
     i = LineIn(*line)
@@ -162,7 +60,7 @@ def process(line):
 
     time = i.date + 'T' + i.time
     uid = make_uid(i.ip, i.user_agent)
-    loc = find_location(i.ip) or Location('', '', '')
+    loc = find_location(i.ip)
 
     o = LineOut(
         time,
@@ -173,9 +71,9 @@ def process(line):
         i.time_taken,
         i.referer,
         uid,
-        loc.name,
-        loc.latitude,
-        loc.longitude
+        loc['city'],
+        loc['latitude'],
+        loc['longitude']
     )
 
     return o
