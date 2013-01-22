@@ -1,18 +1,22 @@
 <!doctype html>
 
 <title>uk map</title>
+<link href="https://assets.digital.cabinet-office.gov.uk/static/fonts-03e0bd97ade000013d45adcb1b6d8a65.css" media="all" rel="stylesheet" type="text/css">
 <style>
   .map path {
-    fill: #333;
-    stroke: #555;
+    fill: #fff;
+    stroke: #fff;
   }
   .map circle {
-    fill: #fff;
+    fill: #006435;
   }
   .pullout path {
     fill: none;
-    stroke: #f00;
-    stroke-width: 1;
+    stroke: #000;
+    stroke-width: 2;
+  }
+  .pullout circle {
+    fill: #000;
   }
 
   #overlay {
@@ -22,35 +26,43 @@
   }
   #overlay p {
     position: relative;
-    border: 1px solid #f00;
+    color: #000;
+    background: #2b8cc4;
+    width: 300px;
+    height: 100px;
+    font-size: 24px;
+    padding: 0 10px;
+    margin: 0;
+  }
+  #overlay p span {
     color: #fff;
-    background: #333;
-    width: 150px;
-    height: 75px;
-    font: 16px helvetica;
-    padding: 10px;
+    font-size: 19px;
   }
   body {
-    background: #333;
+    background: #2b8cc4;
+    font-family: nta;
   }
 </style>
 
-<svg id="map" width="600" height="500"></svg>
+<svg id="map" width="900" height="500"></svg>
 <div id="overlay"></div>
 
 <script src="./d3.v3.min.js"></script>
 <script src="./topojson.v0.min.js"></script>
 <script>
 
+  var width = 900;
+  var height = 600;
+
   var svg = d3.select('#map');
   var overlay = d3.select('#overlay');
 
   var map = svg.append("g").attr("class", "map");
   var projection = d3.geo.albers();
-      projection.center([-2,54]);       // center long and lat of the world
-      projection.translate([300, 250]); // center pixel of the svg
+      projection.center([-3,54]);       // center long and lat of the world
+      projection.translate([width/3, height/2]); // center pixel of the svg
       projection.rotate([0,0]);         // rotation of the graph
-      projection.scale(2500);           // scale of the graph
+      projection.scale(2900);           // scale of the graph
 
   var path = d3.geo.path().projection(projection);
   d3.json('uk2.json', function(json) {
@@ -74,11 +86,10 @@
 
       if(userMap.readyForPullout === true){
         userMap.addPulloutUser(userMap.allUsers[userMap.userCount]);
-      } else {
-        userMap.displayedUsers.push(userMap.allUsers[userMap.userCount]);
       }
+      userMap.displayedUsers.push(userMap.allUsers[userMap.userCount]);
 
-      if(userMap.displayedUsers.length > 40){
+      if(userMap.displayedUsers.length > 150){
         userMap.displayedUsers.shift();
       }
       userMap.update()
@@ -88,7 +99,7 @@
       var circle = map.selectAll('circle')
         .data(userMap.displayedUsers, function(d){ return ''+ d[0] + d[1]; });
 
-      // Add new elements 
+      // Add new elements
       circle.enter().insert('circle')
           .attr('cx', function(d){ return projection([ d[1], d[0] ])[0] })
           .attr('cy', function(d){ return projection([ d[1], d[0] ])[1] })
@@ -97,7 +108,7 @@
         .transition()
           .duration(400)
           .attr("r", 2)
-          .attr('fill-opacity', '0.4')
+          .attr('fill-opacity', '0.8')
 
       // Remove old elements
       circle.exit()
@@ -109,16 +120,12 @@
       userMap.readyForPullout = false;
       var pullout = svg.append('g').attr('class', 'pullout');
       var userPixels = projection([ user[1], user[0] ]),
-          data = [ userPixels, [ 450, userPixels[1]], [ 450, 200 ] ];
+          data = [ [Math.round(userPixels[0]), Math.round(userPixels[1])], [ (2*width/3), Math.round(userPixels[1])] ];
 
       var circle = pullout.append('circle')
           .attr('cx', userPixels[0])
           .attr('cy', userPixels[1])
           .attr("r", 5)
-          .attr('fill', '#f00')
-        .transition()
-          .duration(400)
-          .attr("r", 2)
 
       var line = d3.svg.line()
         .x(function(d) {return d[0];})
@@ -139,8 +146,8 @@
           .attr("stroke-dashoffset", 0)
         .each("end", function(){
           infoBox = overlay.append('p')
-          .text(randomTitle())
-          .attr('style', "left: 450px; top: 150px")
+          .html(randomTitle() + "<br><span>3:34pm</span>")
+          .attr('style', "left: 600px; top: "+(Math.round(userPixels[1]) - 30)+"px")
         });
       
       window.setTimeout(function(){
