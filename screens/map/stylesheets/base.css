@@ -1,0 +1,78 @@
+body {
+  text-align: center;
+  padding: 0;
+  margin: 0;
+}
+.wrapper {
+  width: 870px;
+  margin: 10px auto;
+  text-align: left;
+  position: relative;
+}
+.map path {
+  fill: #fff;
+  stroke: #fff;
+}
+.map circle {
+  fill: #006435;
+}
+.pullout path {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+}
+.pullout circle {
+  fill: #000;
+}
+.pullout .outer {
+  fill: rgba(120,120,120,0.5);
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#overlay p {
+  position: relative;
+  left: 440px;
+  top: 200px;
+  color: #000;
+  width: 300px;
+  height: 100px;
+  font-size: 24px;
+  line-height: 30px;
+  padding: 0 10px;
+  margin: 0;
+}
+#overlay p strong {
+  display: block;
+  margin-bottom: 5px;
+}
+#overlay p span {
+  color: #fff;
+  font-size: 16px;
+  line-height: 24px;
+}
+body {
+  background: #2b8cc4;
+  font-family: nta;
+}
+@-webkit-keyframes fade {
+  from { opacity: 0.0; }
+  to { opacity: 1.0; }
+}
+@-webkit-keyframes fadeSlow {
+  from { opacity: 0.0; }
+  33% { opacity: 0.0; }
+  to { opacity: 1.0; }
+}
+
+#overlay p {
+  -webkit-animation-name: fade;
+  -webkit-animation-duration: .2s;
+}
+#overlay p span {
+  -webkit-animation-name: fadeSlow;
+  -webkit-animation-duration: .3s;
+}
