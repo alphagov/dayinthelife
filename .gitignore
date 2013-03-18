@@ -1,3 +1,5 @@
 gdslog_*
 *.log
 stories/data/*.json
+tools/log_parser/input/*
+tools/log_parser/output/*
