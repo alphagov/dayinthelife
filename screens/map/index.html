@@ -5,11 +5,19 @@
 <link rel="stylesheet" href="stylesheets/base.css">
 
 
-<div class="wrapper">
+<div class="wrapper"><div class="wrapper-inner">
   <svg id="map" width="900" height="500"></svg>
   <div id="overlay"></div>
+  <h1>People using <span class="govuk">GOV<span class="dot">.</span>UK</span></h1>
+</div></div>
+
+<div id="plane">
+  <img src="./images/plane.svg" id="plane-image">
+  <img src="./images/contrail.svg" id="tail">
 </div>
+
 
 <script src="./javascripts/vendor/d3.v3.min.js"></script>
 <script src="./javascripts/vendor/topojson.v0.min.js"></script>
 <script src="./javascripts/application.js"></script>
+<script src="./javascripts/plane.js"></script>

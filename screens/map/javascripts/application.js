@@ -80,19 +80,12 @@ var userMap = {
       .attr('r', 30)
 
     var time = new Date();
-    time.setISO8601(user[3]);
+    time.setMinutes(time.getMinutes() - 9);
+    time.setSeconds(time.getSeconds() - 9);
 
-    user[5] =  user[5].replace(' - GOV.UK', '');
-    var bits = user[5].split(/\s+/);
-    if(bits.length > 1){
-      var last = bits.pop();
-      bits.push(bits.pop() + "&nbsp;"+ last);
-    }
-    user[5] = bits.join(' ');
-
-    var html = "<strong>" + user[5] + "</strong><span>"+time.getGovukDate();
+    var html = "<strong>" + userMap.formatPageTitle(user[3]) + "</strong><span>"+time.getGovukDate();
     if(user[2] !== '') {
-      html = html + ", "+user[2];
+      html = html + "<br>"+user[2];
     }
     html = html + "</span>";
 
@@ -111,6 +104,20 @@ var userMap = {
 
 
   },
+  formatPageTitle: function(str){
+    var bits, last;
+    if(str.indexOf('Search') > -1){
+      bits = str.split(' - ');
+      str = "Search: &ldquo;"+bits[0]+"&rdquo;";
+    }
+    str = str.split(' - ')[0];
+    bits = str.split(/\s+/);
+    if(bits.length > 1){
+      last = bits.pop();
+      bits.push(bits.pop() + "&nbsp;"+ last);
+    }
+    return bits.join(' ');
+  },
   init: function(){
     window.setInterval(userMap.showNextUser, 150);
     window.setTimeout(function(){
@@ -125,32 +132,27 @@ svg.on("click", function() {
   console.log(p);
 });
 
-Date.prototype.setISO8601 = function (string) {
-    var regexp = "([0-9]{4})(-([0-9]{2})(-([0-9]{2})" +
-        "(T([0-9]{2}):([0-9]{2})(:([0-9]{2})(\.([0-9]+))?)?" +
-        "(Z|(([-+])([0-9]{2}):([0-9]{2})))?)?)?)?";
-    var d = string.match(new RegExp(regexp));
-
-    var offset = 0;
-    var date = new Date(d[1], 0, 1);
-
-    if (d[3]) { date.setMonth(d[3] - 1); }
-    if (d[5]) { date.setDate(d[5]); }
-    if (d[7]) { date.setHours(d[7]); }
-    if (d[8]) { date.setMinutes(d[8]); }
-    if (d[10]) { date.setSeconds(d[10]); }
-    if (d[12]) { date.setMilliseconds(Number("0." + d[12]) * 1000); }
-    if (d[14]) {
-        offset = (Number(d[16]) * 60) + Number(d[17]);
-        offset *= ((d[15] == '-') ? 1 : -1);
-    }
-
-    offset -= date.getTimezoneOffset();
-    time = (Number(date) + (offset * 60 * 1000));
-    this.setTime(Number(time));
-}
 Date.prototype.getGovukDate = function () {
   var months = [ "January", "February", "March", "April", "May", "June",
           "July", "August", "September", "October", "November", "December" ];
-  return this.getDate() + " " + months[this.getMonth()] + " " + this.getFullYear();
+  return (
+    this.getDate()
+    + " "
+    + months[this.getMonth()]
+    + " "
+    + this.getFullYear()
+    + ", "
+    + (this.getHours() > 12 ? this.getHours() % 12 : this.getHours())
+    + ":"
+    + zeroPad(this.getMinutes())
+    + "."
+    + zeroPad(this.getSeconds())
+    + ""
+    + (this.getHours() < 12 ? 'am' : 'pm')
+  );
 }
+function zeroPad(i){
+  if(i < 10) return '0' + i;
+  return i;
+}
+
